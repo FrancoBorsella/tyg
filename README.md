@@ -1,6 +1,6 @@
 # TP 2
 
-## PARA COLANARLO
+## PARA CLONARLO
 
 ```
 $ git clone https://github.com/0xNicoo/tyg.git
