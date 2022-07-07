@@ -48,30 +48,78 @@ async function getCoins() {
 
 }
 
+async function getCoinId(coinId) {
+    let coins = await getCoins();
+    let id = 0;
+    coins.forEach(element => {
+        if (element.attributes.coinId == coinId) {
+            id = element.id
+        }
+    });
+    return id
+}
+
+async function getCoinData(coinId) {
+
+    let id = await getCoinId(coinId)
+
+    let res = await axios.get(URL + '/g1-cryptomonedas/' + id + '?populate=*', {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    return res.data.data
+}
+
 //formato en que pasarle los datos(ejmplo): { 'simbolo': 'USDT', 'coinId': 'Tether' }
 //addCoin({ 'simbolo': 'USDT', 'coinId': 'Tether' })
 async function addCoin(coin) {
     await auth();
-    let res = await axios.post(URL + '/g1-cryptomonedas', { data: coin }, {
+    await axios.post(URL + '/g1-cryptomonedas', { data: coin }, {
         headers: {
             Authorization: `Bearer ${token}`
         }
     });
 }
 
-async function cargarDatos(coinId, coinData) {
+
+async function cargarDatosMoneda(coinId, coinData) {
+    console.log(coinData)
+    axios.put(URL + '/g1-cryptomonedas/' + coinId + '?populate=*', { data: { datos: coinData } }, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+}
+
+async function cargarDatos(coinId) {
     await auth();
-    axios.put(URL + '/g1-cryptomonedas/' + coinId, { data: coinData }, {
+
+    datos = {
+        'precio': 0,
+        'marketcap': 0,
+        'volumen': 0
+    };
+
+    datos['precio'] = await getPrice(coinId);
+
+    datos['marketcap'] = await getMrktCap(coinId);
+
+    datos['volumen'] = await get24hVolumen(coinId);
+
+
+    axios.post(URL + '/g1-datos', { data: datos }, {
         headers: {
             Authorization: `Bearer ${token}`
         }
-    });
+    }).then(async (resp) => {
+        let id = await getCoinId(coinId);
+        let allData = await getCoinData(coinId);
+        allData.attributes.datos.data.push(resp.data.data)
+
+
+        console.log(allData)
+
+        cargarDatosMoneda(id, allData.attributes.datos.data)
+    })
 }
-
-
-//falta la funcion para cargar los datos
-
-
-//prueba
-
-cargarDatos(1, { datos: [1] })
